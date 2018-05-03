@@ -315,7 +315,7 @@ def liste():
    addDir("Spielfilme","https://www.filmfriend.de/filme/spielfilme.html?dir=asc&order=name","rubrik","",serie=0,genre=0)
    addDir("Serien","https://www.filmfriend.de/filme/serien.html?dir=asc&order=name","rubrik","",serie=1,genre=0)   
    addDir("Genres","https://www.filmfriend.de/genres","rubrik","",serie=1,genre=1)      
-   addDir("Dokumentar Filme","https://www.filmfriend.de/filme/dokumentarfilme.html?dir=asc&order=name","rubrik","",serie=0)      
+   addDir("Dokumentarfilme","https://www.filmfriend.de/filme/dokumentarfilme.html?dir=asc&order=name","rubrik","",serie=0)      
    addDir("Settings", "", 'Settings', "")
    xbmcplugin.endOfDirectory(addon_handle)
    
