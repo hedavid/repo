@@ -27,9 +27,11 @@ delf=0
 
 xbmcplugin.setContent(addon_handle, 'movies')
 
-baseurl="https://www.tlc.de"
+baseurl="https://www.filmfriend.de"
 xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_UNSORTED)
-xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_VIDEO_SORT_TITLE)
+xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_VIDEO_SORT_TITLE_IGNORE_THE)
+xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_VIDEO_YEAR)
+#xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_VIDEO_RUNTIME)
 
 
 icon = xbmc.translatePath(xbmcaddon.Addon().getAddonInfo('path')+'/icon.png').decode('utf-8')
@@ -74,14 +76,14 @@ def addDir(name, url, mode, thump, desc="",page=1,serie=0,genre=0):
   ok = xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]), url=u, listitem=liz, isFolder=True)
   return ok
   
-def addLink(name, url, mode, thump, duration="", desc="", genre='',director="",bewertung="",mpd="",key=""):
+def addLink(name, url, mode, thump, duration="", desc="", genre='',director="",year="",bewertung="",mpd="",key=""):
   debug("URL ADDLINK :"+url)
   debug( icon  )
   u = sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode="+str(mode)+"&mpd="+str(mpd)+"&key="+str(key)
   ok = True
   liz = xbmcgui.ListItem(name,thumbnailImage=thump)
   liz.setArt({ 'fanart' : icon })
-  liz.setInfo(type="Video", infoLabels={"Title": name, "Plot": desc, "Genre": genre, "Director":director,"Rating":bewertung})
+  liz.setInfo(type="Video", infoLabels={"Title": name, "Plot": desc, "genre": genre, "Director":director,"Rating":bewertung,"year":year})
   liz.setProperty('IsPlayable', 'true')
   liz.addStreamInfo('video', { 'duration' : duration })
 	#xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
@@ -213,9 +215,6 @@ def widevinelist(mpd,key,url):
   header="Cookie="+co+"&User-Agent=Mozilla%2F5.0%20%28Windows%20NT%2010.0%3B%20Win64%3B%20x64%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F65.0.3325.181%20Safari%2F537.36&X-Requested-With=XMLHttpRequest&Accept=text%2Fplain%2C%20%2A%2F%2A%3B%20q%3D0.01&Origin=https%3A%2F%2Fwww.filmfriend.de&Connection=keep-alive&Referer=https%3A%2F%2Fwww.filmfriend.de%2Ffindet-dorie-online-stream.html&Content-Type=application%2Fx-www-form-urlencoded%3B%20charset%3DUTF-8"
   listitem = xbmcgui.ListItem(path=mpd)
   listitem.setProperty('inputstream.adaptive.license_type', 'com.widevine.alpha')  
-  #https://www.filmfriend.de/expressplay/license/license/?type=widevine
-  #key: 730978bd0b6d357c271e7b24579322e9528e48a2fb118bd8585ee0d9c62b
-  #listitem.setProperty('inputstream.adaptive.license_key', licurl+"|Referer=https%3A%2F%2Fwww.filmfriend.de%2Ffindet-dorie-online-stream.html|"+b'\x0D\x0A\x0D\x0A\x08\x04'+"|X")     
   listitem.setProperty('inputstream.adaptive.license_key', licurl+"|content-type=application/octet-stream'&User-Agent=Mozilla%2F5.0%20(Windows%20NT%2010.0%3B%20Win64%3B%20x64)%20AppleWebKit%2F537.36%20(KHTML%2C%20like%20Gecko)%20Chrome%2F65.0.3325.181%20Safari%2F537.36&Referer="+url+"&Origin=https://www.filmfriend.de|R{SSM}|")  
   listitem.setProperty('inputstreamaddon', "inputstream.adaptive")  
   listitem.setProperty("inputstream.adaptive.manifest_type", "mpd")  
@@ -228,10 +227,10 @@ def getserie(url):
   debug(cookiestring)
   debug("########-----#####")  
   headers = {
-    'User-Agent':         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Safari/537.36',
-   'Connection':              'keep-alive',
-   'Cache-Control':                      'max-age=0',
-   'Upgrade-Insecure-Requests':                  '1',
+    'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Safari/537.36',
+   'Connection':'keep-alive',
+   'Cache-Control':'max-age=0',
+   'Upgrade-Insecure-Requests':'1',
    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
    'Accept-Encoding': 'gzip, deflate, br'
    }
@@ -275,6 +274,7 @@ def login():
     debug(type)
     if type=="Berlin":
        login_berlin()
+       
 def playit(url):      
     
     getfilm(url)
@@ -284,29 +284,58 @@ def rubrik(url,page=1,serie=0,genre=0):
     debug("Rubrik")
     debug(serie) 
     genre=int(genre)
-    if genre==0:
-        starturl=url+"&p="+str(page)
-    else:
-        starturl=url
-    content=geturl(starturl) 
-    htmlPage = BeautifulSoup(content, 'html.parser')
-    elemente = htmlPage.find_all("li",attrs={"class":re.compile("col-sm-6 col-md-4 col-lg-3 col-xlg-2 item last catPad mbottom-30")})
-    for element in elemente: 
-       link=element.find("a")["href"]
-       #title=element.find("div",attrs={"class":"title product-name"}).text
-       imgtag=element.find("img",attrs={"class":"resp"})
-       img=imgtag["src"]
-       title=imgtag["alt"]
-       if int(serie)==0:
-            addLink(title,link,"playit",img)
-       else:
-            if genre==0:       
-                addDir(title,link,"getserie",img,serie=1)
-            else:
-                addDir(title,link,"rubrik",img,serie=0)
-       #<span class="film_production_year">2004</span> <span class="film_duration">114min</span>
-    if 'title="Vor">' in content:
-       addDir("Next",url,"rubrik","",page=int(page)+1,serie=serie)
+    
+    weiter=True
+    while weiter:
+        if genre==0:
+            starturl=url+"&p="+str(page)
+        else:
+            starturl=url
+            weiter=False
+        content=geturl(starturl) 
+        htmlPage = BeautifulSoup(content, 'html.parser')
+        elemente = htmlPage.find_all("li",attrs={"class":re.compile("col-sm-6 col-md-4 col-lg-3 col-xlg-2 item last catPad mbottom-30")})
+        for element in elemente: 
+           link=element.find("a")["href"]
+           title=element.find("div",attrs={"class":"title product-name"})
+           if element.find("img",attrs={"class":"resp","class":"pabs"}):
+               imgtag=element.find("img",attrs={"class":"resp","class":"pabs"})
+           else:
+               imgtag=element.find("img",attrs={"class":"resp"})
+           
+           dur=element.find('span',attrs={"class":"film_duration"})
+           if dur:
+               try:
+                   dur=str(int(dur.text.replace('min',''))*60)
+               except:
+                   dur=''
+           if element.find('span',attrs={"class":"film_genre"}):
+               gen=element.find('span',attrs={"class":"film_genre"}).text
+           if element.find('span',attrs={"class":"film_production_year"}):    
+               yr=element.find('span',attrs={"class":"film_production_year"}).text
+           pl=element.find('p',attrs={"class":"short_desc"})
+           if pl:
+               pl=pl.text
+           else:
+               pl=''
+           img=imgtag["src"]
+           if title:
+               title=title.text.strip()
+           else:
+               title=imgtag["alt"]
+           
+           if int(serie)==0:
+                addLink(title,link,"playit",img,duration=dur,genre=gen,year=yr,desc=pl)
+           else:
+                if genre==0:       
+                    addDir(title,link,"getserie",img,serie=1)
+                else:
+                    addDir(title,link,"rubrik",img,serie=0)
+           #<span class="film_production_year">2004</span> <span class="film_duration">114min</span>
+        if htmlPage.find('a',attrs={"next i-next"}):
+            page=int(page)+1
+        else:
+            weiter=False
        
     xbmcplugin.endOfDirectory(addon_handle,succeeded=True,updateListing=False,cacheToDisc=True) 
     
@@ -315,7 +344,10 @@ def liste():
    addDir("Spielfilme","https://www.filmfriend.de/filme/spielfilme.html?dir=asc&order=name","rubrik","",serie=0,genre=0)
    addDir("Serien","https://www.filmfriend.de/filme/serien.html?dir=asc&order=name","rubrik","",serie=1,genre=0)   
    addDir("Genres","https://www.filmfriend.de/genres","rubrik","",serie=1,genre=1)      
-   addDir("Dokumentar Filme","https://www.filmfriend.de/filme/dokumentarfilme.html?dir=asc&order=name","rubrik","",serie=0)      
+   addDir("Beliebteste","https://www.filmfriend.de/beliebtestefilmfriend?dir=desc&order=review","rubrik","",serie=0,genre=0)
+   addDir("Zuletzt gesehen","https://www.filmfriend.de/alle-filme?dir=desc&order=lastview","rubrik","",serie=0)	
+   addDir("Neue Filme","https://www.filmfriend.de/alle-filme?dir=desc&order=created_at","rubrik","",serie=0)
+   addDir("Dokumentarfilme","https://www.filmfriend.de/filme/dokumentarfilme.html?dir=asc&order=name","rubrik","",serie=0)      
    addDir("Settings", "", 'Settings', "")
    xbmcplugin.endOfDirectory(addon_handle)
    
@@ -349,4 +381,4 @@ else:
   if mode == 'playdash':
         playdash(mpd,key,url)
 if delf==0:
-    cj.save(cookie,ignore_discard=True, ignore_expires=True)                       
+    cj.save(cookie,ignore_discard=True, ignore_expires=True)
